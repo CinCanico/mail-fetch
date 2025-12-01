@@ -1,5 +1,6 @@
 # Configuration
 config.ini
+backup/
 
 # Python
 __pycache__/
@@ -8,6 +9,7 @@ __pycache__/
 *.so
 .Python
 build/
+bin/
 develop-eggs/
 dist/
 downloads/
@@ -32,3 +34,5 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+pyvenv.cfg

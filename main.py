@@ -1,41 +1,57 @@
+import sys
+import os
 import configparser
 import getpass
-import os
-import sys
-from protocols.imap import fetch_imap
-from protocols.pop3 import fetch_pop3
+from typing import Tuple
 
-def main():
+from src.protocols.imap import fetch_imap
+from src.protocols.pop3 import fetch_pop3
+
+
+def main() -> None:
     # Load configuration
+    server_address, port, protocol, timeout = try_read_config()
+
+    # Get user credentials
+    username = input("Enter Username: ").lstrip().rstrip()
+    password = getpass.getpass("Enter Password: ")
+
+    domain = '.'.join(server_address.split('.')[1:])
+    email = f"{username}@{domain}"
+
+    # Connect and Fetch directly
+    if protocol == 'IMAP':
+        fetch_imap(server_address, port, email,
+                   password, timeout=timeout)
+    elif protocol == 'POP3':
+        fetch_pop3(server_address, port, email,
+                   password, timeout=timeout)
+    else:
+        print(f"Error: Unsupported protocol {protocol}")
+
+
+def try_read_config() -> Tuple[str, int, str, int]:
     config = configparser.ConfigParser()
     if not os.path.exists('config.ini'):
         print("Error: config.ini not found.")
-        return
+        sys.exit(1)
 
     config.read('config.ini')
-    
+
     try:
         server_address = config['Server']['Address']
         port = int(config['Server']['Port'])
         protocol = config['Server']['Protocol'].upper()
+        timeout = int(config['Server'].get('Timeout', 30))
+
     except KeyError as e:
         print(f"Error: Missing configuration key: {e}")
-        return
+        sys.exit(1)
     except ValueError:
-        print("Error: Port must be an integer.")
-        return
+        print("Error: Port and Timeout must be integers.")
+        sys.exit(1)
+    return server_address, port, protocol, timeout
 
-    # Get user credentials
-    username = input("Enter Username (email): ")
-    password = getpass.getpass("Enter Password: ")
-
-    # Connect and Fetch
-    if protocol == 'IMAP':
-        fetch_imap(server_address, port, username, password)
-    elif protocol == 'POP3':
-        fetch_pop3(server_address, port, username, password)
-    else:
-        print(f"Error: Unsupported protocol {protocol}")
 
 if __name__ == "__main__":
     main()

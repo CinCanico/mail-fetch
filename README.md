@@ -4,6 +4,11 @@ Mail Fetch is a Python script that fetches all emails associated with the given 
 
 ## Interactive Usage
 
+Set up your `config.ini` file then in your terminal:
+
 ```bash
+#Optional
+source bin/activate
+pip install -r requirements.txt
 python3 main.py
 ```
