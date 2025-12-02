@@ -1,6 +1,7 @@
 # Configuration
 config.ini
 backup/
+backups/
 
 # Python
 __pycache__/

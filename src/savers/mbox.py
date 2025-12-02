@@ -1,12 +1,12 @@
 import os
 import mailbox
 from typing import Optional
+from src.savers.base import SaverBase
 
 
-class MboxChunkManager:
+class MboxSaver(SaverBase):
     def __init__(self, username: str, mailbox_name: str, max_size_bytes: int = 128 * 1024 * 1024):
-        self.username_part = username.split('@')[0]
-        self.mailbox_name = mailbox_name
+        super().__init__(username, mailbox_name)
         self.max_size = max_size_bytes
         self.chunk = 1
         self.current_mbox: Optional[mailbox.mbox] = None
@@ -14,12 +14,12 @@ class MboxChunkManager:
         self.current_size = 0
 
         # Ensure backup directory exists
-        os.makedirs("backup", exist_ok=True)
+        os.makedirs("backups", exist_ok=True)
 
         self._open_mbox()
 
     def _get_filename(self) -> str:
-        return os.path.join("backup", f"{self.username_part}.{self.mailbox_name}.{self.chunk}.mbox")
+        return os.path.join("backups", f"{self.username_part}.{self.mailbox_name}.{self.chunk}.mbox")
 
     def _open_mbox(self):
         self.current_path = self._get_filename()
@@ -35,7 +35,7 @@ class MboxChunkManager:
         self.current_mbox = mailbox.mbox(self.current_path)
         self.current_mbox.lock()
 
-    def add(self, raw_email: bytes):
+    def add(self, raw_email: bytes, identifier: str = ""):
         if not raw_email:
             return
 
@@ -54,12 +54,6 @@ class MboxChunkManager:
             self.current_mbox.flush()
             # Update current size
             self.current_size += len(raw_email)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
 
     def close(self):
         if self.current_mbox is not None:

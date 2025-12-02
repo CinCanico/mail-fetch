@@ -1,3 +1,4 @@
+from src.enums import Saver, Protocol, get_saver_enum, get_protocol_enum
 import configparser
 import os
 import sys
@@ -9,7 +10,7 @@ class Config:
     # Server Configuration: 
     server_address: str
     port: int
-    protocol: str
+    protocol: Protocol
     timeout: int
     username: str = ""
     password: str = field(default="", repr=False)
@@ -23,6 +24,7 @@ class Config:
     
     # Backup Configuration: 
     max_file_size: int = 128 * 1024 * 1024
+    file_type: Saver = Saver.EML
 
 
 
@@ -41,18 +43,20 @@ class ConfigManager:
         try:
             server_address = config_parser['Server']['Address']
             port = int(config_parser['Server'].get('Port', 993))
-            protocol = config_parser['Server']['Protocol'].upper()
+            protocol = get_protocol_enum(config_parser['Server']['Protocol'].upper())
             timeout = int(config_parser['Server'].get('Timeout', 30))
 
             max_file_size = int(config_parser['Backup'].get(
                 'MaxFileSize', 128)) * 1024 * 1024
+            file_type = get_saver_enum(config_parser['Backup'].get('FileType', 'EML').upper())
 
             self.config = Config(
                 server_address=server_address,
                 port=port,
                 protocol=protocol,
                 timeout=timeout,
-                max_file_size=max_file_size
+                max_file_size=max_file_size,
+                file_type=file_type
             )
             return self.config
 
