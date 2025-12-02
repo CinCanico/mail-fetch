@@ -1,26 +1,29 @@
 import configparser
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
-
 
 @dataclass
 class Config:
+    # Server Configuration: 
     server_address: str
     port: int
     protocol: str
     timeout: int
     username: str = ""
-    password: str = ""
-    max_file_size: int = 128 * 1024 * 1024
-
+    password: str = field(default="", repr=False)
+    
     @property
     def email(self) -> str:
         if not self.username or not self.server_address:
             return ""
         domain = '.'.join(self.server_address.split('.')[1:])
         return f"{self.username}@{domain}"
+    
+    # Backup Configuration: 
+    max_file_size: int = 128 * 1024 * 1024
+
 
 
 class ConfigManager:

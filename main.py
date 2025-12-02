@@ -25,6 +25,7 @@ def main() -> None:
         print("Error: Username and Password are required.")
         return
     print(f"{config}")
+    
     # Connect and Fetch directly
     match config.protocol:
         case Protocol.IMAP.value:
