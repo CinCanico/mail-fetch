@@ -1,6 +1,7 @@
 from imaplib import IMAP4_SSL
 import shlex
 from typing import Optional
+from src.config import Config
 from src.mbox import MboxChunkManager
 
 
@@ -23,7 +24,7 @@ def get_mailbox_list(mail: IMAP4_SSL) -> list[str]:
     if mail_list is None or type(mail_list) is not list:
         print("No mailboxes found!")
         return []
-    
+
     mailboxes = []
     for listitem in mail_list:
         if type(listitem) is not bytes:
@@ -39,18 +40,18 @@ def get_mailbox_list(mail: IMAP4_SSL) -> list[str]:
                 mailboxes.append(parts[-1])
         except ValueError:
             print(f"Failed to parse mailbox name: {decoded}")
-            
+
     return mailboxes
 
 
 def search_emails(mail: IMAP4_SSL, mailbox_name: str) -> list[bytes]:
     """Selects a mailbox and searches for all emails."""
     print(f"Selecting mailbox: {mailbox_name}")
-    status, _ = mail.select(f'"{mailbox_name}"') # Quote mailbox name
+    status, _ = mail.select(f'"{mailbox_name}"')  # Quote mailbox name
     if status != "OK":
         print(f"Failed to select mailbox {mailbox_name}")
         return []
-        
+
     print(f"Searching for emails in {mailbox_name}...")
     status, messages = mail.search(None, "ALL")
     if status != "OK":
@@ -67,30 +68,31 @@ def fetch_email(mail: IMAP4_SSL, email_id: bytes) -> Optional[bytes]:
         # msg_data[0] is a tuple (header, body) usually for RFC822
         # The body is at index 1 of the tuple
         if isinstance(msg_data[0], tuple):
-             return msg_data[0][1]
+            return msg_data[0][1]
     return None
 
 
-def fetch_imap(server: str, port: int, username: str, password: str, mbox_path: str = 'backup.mbox', timeout: int = 30) -> None:
+def fetch_imap(config: Config) -> None:
     """Orchestrates the IMAP fetch process."""
     try:
-        mail = connect_to_server(server, port, username, password, timeout)
+        mail = connect_to_server(
+            config.server_address, config.port, config.email, config.password, config.timeout)
         mailbox_names = get_mailbox_list(mail)
         print(f"Mailboxes found: {mailbox_names}")
 
         for mb_name in mailbox_names:
             email_ids = search_emails(mail, mb_name)
             print(f"Found {len(email_ids)} emails in {mb_name}.")
-            
+
             if not email_ids:
                 continue
 
-            with MboxChunkManager(username, mb_name) as manager:
+            with MboxChunkManager(config.username, mb_name, config.max_file_size) as manager:
                 for email_id in email_ids:
                     raw_email = fetch_email(mail, email_id)
                     if raw_email:
                         manager.add(raw_email)
-                
+
         mail.logout()
         print("Backup completed.")
 

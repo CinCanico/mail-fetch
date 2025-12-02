@@ -12,10 +12,10 @@ class MboxChunkManager:
         self.current_mbox: Optional[mailbox.mbox] = None
         self.current_path = ""
         self.current_size = 0
-        
+
         # Ensure backup directory exists
         os.makedirs("backup", exist_ok=True)
-        
+
         self._open_mbox()
 
     def _get_filename(self) -> str:
@@ -26,7 +26,7 @@ class MboxChunkManager:
         while os.path.exists(self.current_path) and os.path.getsize(self.current_path) >= self.max_size:
             self.chunk += 1
             self.current_path = self._get_filename()
-        
+
         if os.path.exists(self.current_path):
             self.current_size = os.path.getsize(self.current_path)
         else:
@@ -43,13 +43,13 @@ class MboxChunkManager:
         # We use len(raw_email) which returns the number of bytes in the bytes object.
         # This is accurate for the payload size. Mbox adds a small overhead ("From " line),
         # but for splitting purposes, this is sufficient.
-        
-        if self.current_size > 0 and (self.current_size + len(raw_email)) > self.max_size:
+        next_size = (self.current_size + len(raw_email))
+        if self.current_size > 0 and next_size > self.max_size:
             self.close()
             self.chunk += 1
             self._open_mbox()
 
-        if self.current_mbox:
+        if self.current_mbox is not None:
             self.current_mbox.add(raw_email)
             self.current_mbox.flush()
             # Update current size
@@ -62,7 +62,7 @@ class MboxChunkManager:
         self.close()
 
     def close(self):
-        if self.current_mbox:
+        if self.current_mbox is not None:
             try:
                 self.current_mbox.flush()
             except Exception as e:
@@ -76,5 +76,4 @@ class MboxChunkManager:
                     self.current_mbox.close()
                     self.current_mbox = None
                     self.current_size = 0
-            
-        
+
