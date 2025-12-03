@@ -79,8 +79,8 @@ class IMAPProtocol:
 
         print(f"{self.config.email:20}: {mailbox_name:20}: Searching...")
         status, messages = self._safe_mail.search(None, "ALL")
-        if status != "OK":
-            print("No messages found!")
+        if status != "OK" or messages[0] == None:
+            print(f"{self.config.email:20}: {mailbox_name:20}: No messages found!")
             return []
         # messages[0] is bytes, split returns list of bytes
         return messages[0].split()
